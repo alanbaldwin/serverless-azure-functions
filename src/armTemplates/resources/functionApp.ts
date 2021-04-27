@@ -86,7 +86,8 @@ export class FunctionAppResource implements ArmResourceTemplateGenerator {
           name: "[parameters('functionAppName')]",
           "location": "[parameters('location')]",
           "identity": {
-            "type": ArmParamType.SystemAssigned
+            "type": "[parameters('managedIdentityType')]",
+            "userAssignedIdentities": "[parameters('managedIdentities')]"
           },
           "dependsOn": [
             "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
@@ -95,7 +96,7 @@ export class FunctionAppResource implements ArmResourceTemplateGenerator {
           "kind": "[parameters('functionAppKind')]",
           "properties": {
             "siteConfig": {
-              appSettings: this.getFunctionAppSettings(config), 
+              appSettings: this.getFunctionAppSettings(config),
               "linuxFxVersion": "[parameters('linuxFxVersion')]",
             },
             "reserved": "[parameters('functionAppReserved')]",
@@ -112,7 +113,7 @@ export class FunctionAppResource implements ArmResourceTemplateGenerator {
     const resourceConfig: FunctionAppConfig = {
       ...config.provider.functionApp,
     };
-    const { runtime, os } = config.provider;
+    const { runtime, os, managedIdentityType, managedIdentity } = config.provider;
     const isLinuxRuntime = os === FunctionAppOS.LINUX;
 
     const params: FunctionAppParams = {
@@ -146,6 +147,12 @@ export class FunctionAppResource implements ArmResourceTemplateGenerator {
       },
       functionAppEnableRemoteBuild: {
         value: isLinuxRuntime
+      },
+      managedIdentityType: {
+        value: managedIdentityType
+      },
+      managedIdentities: {
+        value: { [managedIdentity]: {} },
       }
     };
 
@@ -202,6 +209,14 @@ export class FunctionAppResource implements ArmResourceTemplateGenerator {
         defaultValue: "",
         type: ArmParamType.String
       },
+      managedIdentityType: {
+        defaultValue: "",
+        type: ArmParamType.String
+      },
+      managedIdentities: {
+        defaultValue: {},
+        type: ArmParamType.Object
+      }
     }
   }
 
